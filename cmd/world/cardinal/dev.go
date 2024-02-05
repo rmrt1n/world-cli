@@ -20,6 +20,7 @@ import (
 	"pkg.world.dev/world-cli/common"
 	"pkg.world.dev/world-cli/common/config"
 	"pkg.world.dev/world-cli/common/logger"
+	"pkg.world.dev/world-cli/common/teacmd"
 	"pkg.world.dev/world-cli/tea/style"
 )
 
@@ -211,11 +212,12 @@ func startRedis(ctx context.Context) error {
 	// Create an error group for managing redis lifecycle
 	group := new(errgroup.Group)
 
+	dockerOrPodman := teacmd.ContainerCmd()
 	// Start Redis container
 	group.Go(func() error {
 		//nolint:gosec // not applicable
 		cmd := exec.Command(
-			"docker", "run", "-d", "-p", fmt.Sprintf("%s:%s", RedisPort, RedisPort),
+			dockerOrPodman, "run", "-d", "-p", fmt.Sprintf("%s:%s", RedisPort, RedisPort),
 			"--name", "cardinal-dev-redis", "redis",
 		)
 
@@ -275,8 +277,9 @@ func startRedis(ctx context.Context) error {
 }
 
 func stopRedis() error {
+	dockerOrPodman := teacmd.ContainerCmd()
 	logger.Println("Stopping cardinal-dev-redis container")
-	if err := sh.Run("docker", "rm", "-f", "cardinal-dev-redis"); err != nil {
+	if err := sh.Run(dockerOrPodman, "rm", "-f", "cardinal-dev-redis"); err != nil {
 		logger.Println("Failed to delete Redis container automatically")
 		logger.Println("Please delete it manually with `docker rm -f cardinal-dev-redis`")
 		return err
