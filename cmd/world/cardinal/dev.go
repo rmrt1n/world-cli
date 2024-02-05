@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"pkg.world.dev/world-cli/common/logger"
+	"pkg.world.dev/world-cli/common/tea_cmd"
 	"pkg.world.dev/world-cli/tea/style"
 
 	"github.com/magefile/mage/sh"
@@ -127,7 +128,8 @@ var devCmd = &cobra.Command{
 // runRedis runs Redis in a Docker container
 func runRedis() error {
 	logger.Println("Starting Redis container...")
-	cmd := exec.Command("docker", "run", "-d", "-p", fmt.Sprintf("%s:%s", RedisPort, RedisPort), "--name", "cardinal-dev-redis", "redis")
+	dockerOrPodman := tea_cmd.ContainerCmd()
+	cmd := exec.Command(dockerOrPodman, "run", "-d", "-p", fmt.Sprintf("%s:%s", RedisPort, RedisPort), "--name", "cardinal-dev-redis", "redis")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -139,7 +141,7 @@ func runRedis() error {
 			return err
 		}
 
-		err := sh.Run("docker", "run", "-d", "-p", fmt.Sprintf("%s:%s", RedisPort, RedisPort), "--name", "cardinal-dev-redis", "redis")
+		err := sh.Run(dockerOrPodman, "run", "-d", "-p", fmt.Sprintf("%s:%s", RedisPort, RedisPort), "--name", "cardinal-dev-redis", "redis")
 		if err != nil {
 			if sh.ExitStatus(err) == 125 {
 				fmt.Println("Maybe redis cardinal docker is still up, run 'world cardinal stop' and try again")
@@ -186,7 +188,8 @@ func runCardinal() (*exec.Cmd, error) {
 
 // cleanup stops and removes the Redis and Webdis containers
 func cleanup() error {
-	err := sh.Run("docker", "rm", "-f", "cardinal-dev-redis")
+	dockerOrPodman := tea_cmd.ContainerCmd()
+	err := sh.Run(dockerOrPodman, "rm", "-f", "cardinal-dev-redis")
 	if err != nil {
 		logger.Println("Failed to delete Redis container automatically")
 		logger.Println("Please delete it manually with `docker rm -f cardinal-dev-redis`")

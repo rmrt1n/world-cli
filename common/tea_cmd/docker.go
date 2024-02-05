@@ -23,6 +23,15 @@ const (
 	DockerServiceCardinalDebug DockerService = "cardinal-debug"
 )
 
+func ContainerCmd() string {
+	cmd := exec.Command("docker", "-v")
+	err := cmd.Run()
+	if err != nil {
+		return "podman"
+	}
+	return "docker"
+}
+
 func dockerCompose(args ...string) error {
 	return dockerComposeWithCfg(config.Config{}, args...)
 }
@@ -31,7 +40,8 @@ func dockerComposeWithCfg(cfg config.Config, args ...string) error {
 	yml := path.Join(cfg.RootDir, "docker-compose.yml")
 	args = append([]string{"compose", "-f", yml}, args...)
 
-	cmd := exec.Command("docker", args...)
+	dockerOrPodman := ContainerCmd()
+	cmd := exec.Command(dockerOrPodman, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
